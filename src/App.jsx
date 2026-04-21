@@ -17,13 +17,19 @@ import AutomationNode from "./nodes/AutomationNode";
 // API
 import { getAutomations } from "./api/mockApi";
 
+const NODE_LABELS = {
+  start: "Start",
+  task: "Task",
+  automation: "Automation",
+  end: "End"
+};
+
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [logs, setLogs] = useState([]);
 
-  // Node types
   const nodeTypes = {
     task: TaskNode,
     start: StartNode,
@@ -31,22 +37,22 @@ function App() {
     automation: AutomationNode
   };
 
-  // ✅ Add Node (with Start restriction)
+  // ✅ Add Node
   const addNode = (type) => {
-    if (type === "start" && nodes.some(n => n.type === "start")) {
+    if (type === "start" && nodes.some((n) => n.type === "start")) {
       alert("❌ Only one Start node allowed!");
       return;
     }
 
     const newNode = {
       id: Date.now().toString(),
-      type: type,
+      type,
       position: {
         x: Math.random() * 400,
         y: Math.random() * 400
       },
       data: {
-        title: type.toUpperCase(),
+        title: NODE_LABELS[type],
         description: "",
         assignee: "",
         message: "",
@@ -73,66 +79,39 @@ function App() {
     );
   };
 
-  // ✅ Improved Workflow Simulation
+  // Simulation
   const runWorkflow = () => {
-    const hasStart = nodes.some((n) => n.type === "start");
-    const hasEnd = nodes.some((n) => n.type === "end");
-
-    if (!hasStart) {
+    if (!nodes.some((n) => n.type === "start")) {
       alert("❌ Start node required!");
       return;
     }
 
-    if (!hasEnd) {
+    if (!nodes.some((n) => n.type === "end")) {
       alert("❌ End node required!");
-      return;
-    }
-
-    if (edges.length === 0) {
-      alert("⚠️ Connect nodes first!");
       return;
     }
 
     const execution = edges.map((edge) => {
       const from = nodes.find((n) => n.id === edge.source);
       const to = nodes.find((n) => n.id === edge.target);
-
       return `➡️ ${from?.data.title} → ${to?.data.title}`;
     });
 
-    setLogs([
-      "🚀 Starting Workflow...",
-      ...execution,
-      "✅ Workflow Completed"
-    ]);
+    setLogs(["🚀 Start", ...execution, "✅ End"]);
   };
 
-  // Styles
-  const inputStyle = {
-    width: "100%",
-    padding: "8px",
-    marginBottom: "12px",
-    borderRadius: "6px",
-    border: "1px solid #ccc"
-  };
-
-  const labelStyle = {
-    fontSize: "13px",
-    fontWeight: "600",
-    marginBottom: "4px",
-    display: "block"
+  // Common input props (🔥 FIXED)
+  const inputProps = {
+    className: "nodrag",
+    onClick: (e) => e.stopPropagation(),
+    onKeyDown: (e) => e.stopPropagation()
   };
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       
-      {/* LEFT SIDEBAR */}
-      <div style={{
-        width: "180px",
-        padding: "15px",
-        background: "#f0f0f0",
-        borderRight: "1px solid #ddd"
-      }}>
+      {/* LEFT */}
+      <div style={{ width: 180, padding: 15, background: "#f0f0f0" }}>
         <h3>Nodes</h3>
 
         <button onClick={() => addNode("start")}>Start</button><br /><br />
@@ -156,8 +135,8 @@ function App() {
           nodeTypes={nodeTypes}
           onNodeClick={(e, node) => setSelectedNode(node)}
           fitView
-          nodeDragHandle=".drag-handle"
-          nodesDraggable={true}
+          deleteKeyCode={null}        // 🔥 FIX
+          nodesFocusable={false}      // 🔥 FIX
         >
           <Background />
           <Controls />
@@ -165,12 +144,7 @@ function App() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={{
-        width: "280px",
-        padding: "20px",
-        background: "#fafafa",
-        borderLeft: "1px solid #ddd"
-      }}>
+      <div style={{ width: 280, padding: 20 }}>
         <h3>Edit Node</h3>
 
         {selectedNode ? (
@@ -179,37 +153,29 @@ function App() {
 
             {/* START */}
             {selectedNode.type === "start" && (
-              <>
-                <label style={labelStyle}>Start Title</label>
-                <input
-                  style={inputStyle}
-                  value={selectedNode.data.title || ""}
-                  onChange={(e) => updateNode("title", e.target.value)}
-                />
-              </>
+              <input
+                {...inputProps}
+                value={selectedNode.data.title}
+                onChange={(e) => updateNode("title", e.target.value)}
+              />
             )}
 
             {/* TASK */}
             {selectedNode.type === "task" && (
               <>
-                <label style={labelStyle}>Title</label>
                 <input
-                  style={inputStyle}
-                  value={selectedNode.data.title || ""}
+                  {...inputProps}
+                  value={selectedNode.data.title}
                   onChange={(e) => updateNode("title", e.target.value)}
                 />
-
-                <label style={labelStyle}>Assignee</label>
                 <input
-                  style={inputStyle}
-                  value={selectedNode.data.assignee || ""}
+                  {...inputProps}
+                  value={selectedNode.data.assignee}
                   onChange={(e) => updateNode("assignee", e.target.value)}
                 />
-
-                <label style={labelStyle}>Description</label>
                 <input
-                  style={inputStyle}
-                  value={selectedNode.data.description || ""}
+                  {...inputProps}
+                  value={selectedNode.data.description}
                   onChange={(e) => updateNode("description", e.target.value)}
                 />
               </>
@@ -218,17 +184,15 @@ function App() {
             {/* AUTOMATION */}
             {selectedNode.type === "automation" && (
               <>
-                <label style={labelStyle}>Title</label>
                 <input
-                  style={inputStyle}
-                  value={selectedNode.data.title || ""}
+                  {...inputProps}
+                  value={selectedNode.data.title}
                   onChange={(e) => updateNode("title", e.target.value)}
                 />
 
-                <label style={labelStyle}>Action</label>
                 <select
-                  style={inputStyle}
-                  value={selectedNode.data.action || ""}
+                  {...inputProps}
+                  value={selectedNode.data.action}
                   onChange={(e) => updateNode("action", e.target.value)}
                 >
                   <option value="">Select Action</option>
@@ -243,14 +207,11 @@ function App() {
 
             {/* END */}
             {selectedNode.type === "end" && (
-              <>
-                <label style={labelStyle}>End Message</label>
-                <input
-                  style={inputStyle}
-                  value={selectedNode.data.message || ""}
-                  onChange={(e) => updateNode("message", e.target.value)}
-                />
-              </>
+              <input
+                {...inputProps}
+                value={selectedNode.data.message}
+                onChange={(e) => updateNode("message", e.target.value)}
+              />
             )}
           </>
         ) : (
@@ -258,30 +219,17 @@ function App() {
         )}
       </div>
 
-      {/* SIMULATION PANEL */}
+      {/* LOG PANEL */}
       <div style={{
         position: "absolute",
         bottom: 0,
         right: 0,
-        width: "280px",
+        width: 280,
         background: "#fff",
-        borderTop: "1px solid #ddd",
-        padding: "10px",
-        maxHeight: "200px",
-        overflowY: "auto",
-        zIndex: 10
+        padding: 10
       }}>
         <h4>Simulation</h4>
-
-        {logs.length === 0 ? (
-          <p>No execution yet</p>
-        ) : (
-          logs.map((log, i) => (
-            <div key={i} style={{ fontSize: "13px", marginBottom: "5px" }}>
-              {log}
-            </div>
-          ))
-        )}
+        {logs.map((log, i) => <div key={i}>{log}</div>)}
       </div>
 
     </div>
