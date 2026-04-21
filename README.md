@@ -7,6 +7,9 @@ This project is a visual workflow builder for HR processes such as onboarding, l
 Users can design workflows by dragging nodes, connecting them, configuring each step, and simulating execution.
 
 ---
+## 📸 Project Preview
+
+![Workflow UI](public/workflow.png)
 
 ## ✨ Features
 
